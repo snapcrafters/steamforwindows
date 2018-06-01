@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Steam for Windows
+Exec=steamforwindows
+Icon=${SNAP}/meta/gui/steamforwindows.png
+Categories=Game;
+Terminal=false
+StartupNotify=true
+StartupWMClass=Steam.exe
+Keywords=game

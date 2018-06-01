@@ -165,7 +165,14 @@ if [ -f "${WINEPREFIX}/.update-timestamp" ]; then
 fi
 
 # Initialise wine
+DISCLAIMER="The Steam for Windows snap is experimental and built with 
+development releases of upstream WINE and may not function as expected.\n\nIf you 
+encounter issues please report them on the Steam for Windows snap issue 
+tracker - https://github.com/Snapcrafters/steamforwindows"
+
 if [ ! -f "${WINEPREFIX}/drive_c/windows/win.ini" ]; then
+  # WIP Splash
+  yad --title "Steam for Windows" --window-icon="${SNAP}/meta/gui/steamforwindows.png" --timeout=15 --timeout-indicator=bottom --text="$DISCLAIMER" --image="${SNAP}/meta/gui/steamforwindows.png" --no-escape --width=460 --center --no-buttons --splash &
   env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" wineboot --init 2>&1 | \
   yad --progress --title="Preparing Windows environment" --width=400 --center --no-buttons --auto-close --auto-kill --on-top --pulsate
   # Opt out of winetricks metrics - we ninja this to avoid dialogs
@@ -173,6 +180,9 @@ if [ ! -f "${WINEPREFIX}/drive_c/windows/win.ini" ]; then
     mkdir -p "${XDG_CACHE_HOME}/winetricks"
     echo 0 > "${XDG_CACHE_HOME}/winetricks/track_usage"
   fi
+else
+  # WIP Notification
+  notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "Steam for Windows" "${DISCLAIMER}"
 fi
 
 # Launch wineboot/winecfg/winetricks if requested.

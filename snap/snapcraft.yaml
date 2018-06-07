@@ -29,6 +29,7 @@ apps:
       - network-bind
       - opengl
       - pulseaudio
+      - removable-media
       - wayland
       - x11
   wineboot:

@@ -1,9 +1,16 @@
 #!/bin/bash
 
+TITLE="TrackMania Nations Forever"
+NOTICE="The ${TITLE} snap is experimental, built
+with development releases of upstream WINE and may not function as
+expected.\n\nIf you encounter issues please report them on the
+${TITLE} snap issue tracker:
+\n\nhttps://github.com/Snapcrafters/tmnationsforever"
+
 function install_app() {
   # Install additional requirements via winetricks here
   if [ -n "${TRICKS}" ]; then
-    for TRICK in "${TRICKS}"; do
+    for TRICK in ${TRICKS}; do
       env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINETRICKS}" --gui --unattended ${TRICK}
     done
   fi
@@ -13,7 +20,7 @@ function install_app() {
     # Downloads a file with progress using wget and yad
     wget "${INSTALL_URL}" -O "${TMPDIR}/${INSTALL_EXE}" 2>&1 | \
     perl -p -e '$| = 1; s/^.* +([0-9]+%) +([0-9,.]+[GMKB]) +([0-9hms,.]+).*$/\1\n# Downloading... \2 (\3)/' | \
-    yad --progress --title="${INSTALL_EXE}" --width=400 --center --no-buttons --auto-close --auto-kill --on-top
+    yad --progress --title="${INSTALL_EXE}" --width=400 --center --no-buttons --auto-close --auto-kill --on-top --no-escape
     # Installs the wine application
     env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" "${TMPDIR}/${INSTALL_EXE}" /silent
     # Removes the cached installer
@@ -24,7 +31,17 @@ function install_app() {
 function launch_app() {
   # If we don't change into the program directory some assets may not be found
   cd "${WINE_DIR}"
-  env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" "${WINE_EXE}" -SkipBuildPatchPrereq -OpenGL -no-dwrite -no-cef-sandbox "${@}"
+
+  # Only use virtual desktop if it has been requested and we're running Xorg
+  if [ "${XDG_SESSION_TYPE}" == "x11" ] && [ "${VIRTDESKTOP}" == "1" ]; then
+    # Get the native resolution of the primary display.
+    # Creating a virtual desktop the same size will eliminate bugs when
+    # switching from fullscreen to windowed mode.
+    NATIVE_RES=$(xrandr -q | grep primary | cut -d' ' -f4 | cut -d'+' -f1)
+    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" explorer /desktop="virtual","${NATIVE_RES}" "${WINE_EXE}" -SkipBuildPatchPrereq -OpenGL -no-dwrite -no-cef-sandbox "${@}"
+  else
+    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" "${WINE_EXE}" -SkipBuildPatchPrereq -OpenGL -no-dwrite -no-cef-sandbox "${@}"
+  fi
 }
 
 function prepend_dir() {
@@ -61,8 +78,17 @@ fi
 # # We need to handle that case and reset $SNAP
 SNAP=`echo $SNAP | sed -e "s|/var/lib/snapd||g"`
 
-ARCH="i386-linux-gnu"
 export WINEARCH="win32"
+if [ "${WINEARCH}" == "win32" ]; then
+  ARCH="i386-linux-gnu"
+else
+  ARCH="x86_64-linux-gnu"
+fi
+
+if [ -n "${DLLOVERRIDES}" ]; then
+  export WINEDLLOVERRIDES="${DLLOVERRIDES}"
+fi
+
 export WINEVERPATH=$SNAP
 export WINESERVER=$SNAP/bin/wineserver
 export WINELOADER=$SNAP/bin/wine
@@ -70,8 +96,7 @@ export WINETRICKS=$SNAP/bin/winetricks
 export winepath=$SNAP/bin/winepath
 export WINEDLLPATH=$SNAP/lib/wine/fakedlls
 export WINEPREFIX="$SNAP_USER_COMMON/.wine"
-# Prevent the pop-ups about Wine Mono and Wine Gecko
-export WINEDLLOVERRIDES="mscoree,mshtml="
+
 #export WINEDEBUG=-all
 export LD_LIBRARY_PATH="$SNAP/lib:$SNAP/lib/$ARCH:$SNAP/usr/lib:$SNAP/usr/lib/$ARCH:$LD_LIBRARY_PATH"
 
@@ -101,6 +126,10 @@ append_dir LD_LIBRARY_PATH /var/lib/snapd/lib/gl
 
 # Pulseaudio export
 append_dir LD_LIBRARY_PATH $SNAP/usr/lib/$ARCH/pulseaudio
+
+# EGL vendor files on glvnd enabled systems
+[ -d /var/lib/snapd/lib/glvnd/egl_vendor.d ] && \
+append_dir __EGL_VENDOR_LIBRARY_DIRS /var/lib/snapd/lib/glvnd/egl_vendor.d
 
 # Tell GStreamer where to find its plugins
 export GST_PLUGIN_PATH=$SNAP/usr/lib/$ARCH/gstreamer-1.0
@@ -165,14 +194,10 @@ if [ -f "${WINEPREFIX}/.update-timestamp" ]; then
 fi
 
 # Initialise wine
-DISCLAIMER="The Steam for Windows snap is experimental and built with 
-development releases of upstream WINE and may not function as expected.\n\nIf you 
-encounter issues please report them on the Steam for Windows snap issue 
-tracker - https://github.com/Snapcrafters/steamforwindows"
-
 if [ ! -f "${WINEPREFIX}/drive_c/windows/win.ini" ]; then
-  # WIP Splash
-  yad --title "Steam for Windows" --window-icon="${SNAP}/meta/gui/steamforwindows.png" --timeout=15 --timeout-indicator=bottom --text="$DISCLAIMER" --image="${SNAP}/meta/gui/steamforwindows.png" --no-escape --width=460 --center --no-buttons --splash &
+  # Splash
+  yad --timeout=15 --timeout-indicator=bottom --text="${NOTICE}" --no-escape --width=460 --center --no-buttons --splash &
+  # Create the WINE environment
   env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" wineboot --init 2>&1 | \
   yad --progress --title="Preparing Windows environment" --width=400 --center --no-buttons --auto-close --auto-kill --on-top --pulsate
   # Opt out of winetricks metrics - we ninja this to avoid dialogs
@@ -181,8 +206,8 @@ if [ ! -f "${WINEPREFIX}/drive_c/windows/win.ini" ]; then
     echo 0 > "${XDG_CACHE_HOME}/winetricks/track_usage"
   fi
 else
-  # WIP Notification
-  notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "Steam for Windows" "${DISCLAIMER}"
+  # Notification
+  notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "${TITLE}" "${NOTICE}"
 fi
 
 # Launch wineboot/winecfg/winetricks if requested.

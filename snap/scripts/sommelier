@@ -1,11 +1,11 @@
 #!/bin/bash
 
-TITLE="TrackMania Nations Forever"
+TITLE="Steam for Windows"
 NOTICE="The ${TITLE} snap is experimental, built
 with development releases of upstream WINE and may not function as
 expected.\n\nIf you encounter issues please report them on the
 ${TITLE} snap issue tracker:
-\n\nhttps://github.com/Snapcrafters/tmnationsforever"
+\n\nhttps://github.com/Snapcrafters/steamforwindows"
 
 function install_app() {
   # Install additional requirements via winetricks here
@@ -78,6 +78,7 @@ fi
 # # We need to handle that case and reset $SNAP
 SNAP=`echo $SNAP | sed -e "s|/var/lib/snapd||g"`
 
+export GTK_MODULES=""
 export WINEARCH="win32"
 if [ "${WINEARCH}" == "win32" ]; then
   ARCH="i386-linux-gnu"
@@ -109,6 +110,9 @@ export XLOCALEDIR=$SNAP/usr/share/X11/locale
 
 # Set XCursors path
 export XCURSOR_PATH=$SNAP/usr/share/icons
+
+# SAMBA Libs for ntlm_auth to function
+append_dir LD_LIBRARY_PATH $SNAP/usr/lib/$ARCH/samba
 
 # Mesa Libs for OpenGL support
 append_dir LD_LIBRARY_PATH $SNAP/usr/lib/$ARCH/mesa
@@ -196,7 +200,7 @@ fi
 # Initialise wine
 if [ ! -f "${WINEPREFIX}/drive_c/windows/win.ini" ]; then
   # Splash
-  yad --timeout=15 --timeout-indicator=bottom --text="${NOTICE}" --no-escape --width=460 --center --no-buttons --splash &
+  yad --timeout=15 --timeout-indicator=bottom --text="${NOTICE}" --no-escape --width=460 --center --no-buttons --splash --on-top &
   # Create the WINE environment
   env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" wineboot --init 2>&1 | \
   yad --progress --title="Preparing Windows environment" --width=400 --center --no-buttons --auto-close --auto-kill --on-top --pulsate

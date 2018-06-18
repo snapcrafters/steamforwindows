@@ -18,7 +18,6 @@ apps:
     environment:
       WINEPREFIX: "$SNAP_USER_COMMON/.wine"
       DLLOVERRIDES: "mscoree,mshtml=" # Prevent pop-ups about Wine Mono and Wine Gecko
-      INSTALL_URL: "http://files.trackmaniaforever.com/tmnationsforever_setup.exe"
       TRICKS: "winxp steam"
       LC_ALL: "C.UTF-8"
     plugs:

@@ -18,7 +18,7 @@ apps:
     environment:
       WINEPREFIX: "$SNAP_USER_COMMON/.wine"
       DLLOVERRIDES: "mscoree,mshtml=" # Prevent pop-ups about Wine Mono and Wine Gecko
-      TRICKS: "winxp steam"
+      INSTALL_URL: "http://media.steampowered.com/client/installer/SteamSetup.exe"
       LC_ALL: "C.UTF-8"
     plugs:
       - desktop
@@ -37,6 +37,7 @@ apps:
     command: bin/sommelier $SNAP/bin/wineboot
     environment:
       WINEPREFIX: "$SNAP_USER_COMMON/.wine"
+      DLLOVERRIDES: "mscoree,mshtml=" # Prevent pop-ups about Wine Mono and Wine Gecko
     plugs:
       - desktop
       - desktop-legacy
@@ -47,6 +48,7 @@ apps:
     command: bin/sommelier $SNAP/bin/winecfg
     environment:
       WINEPREFIX: "$SNAP_USER_COMMON/.wine"
+      DLLOVERRIDES: "mscoree,mshtml=" # Prevent pop-ups about Wine Mono and Wine Gecko
     plugs:
       - desktop
       - desktop-legacy
@@ -57,6 +59,7 @@ apps:
     command: bin/sommelier $SNAP/bin/winetricks prefix="$WINEPREFIX"
     environment:
       WINEPREFIX: "$SNAP_USER_COMMON/.wine"
+      DLLOVERRIDES: "mscoree,mshtml=" # Prevent pop-ups about Wine Mono and Wine Gecko
       LC_ALL: "C.UTF-8"
     plugs:
       - desktop
@@ -92,7 +95,7 @@ parts:
     override-build: |
       snapcraftctl build
 
-      WINE_REL="wine-devel"
+      WINE_REL="wine-staging"
       WINE_ARCH="i386"
       WINE_VER="3.10.0"
 

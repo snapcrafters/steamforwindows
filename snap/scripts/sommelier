@@ -1,11 +1,8 @@
 #!/bin/bash
 
 TITLE="Steam for Windows"
-NOTICE="The ${TITLE} snap is experimental, built
-with development releases of upstream WINE and may not function as
-expected.\n\nIf you encounter issues please report them on the
-${TITLE} snap issue tracker:
-\n\nhttps://github.com/Snapcrafters/steamforwindows"
+NOTICE="This snap is experimental please visit https://github.com/Snapcrafters/steamforwindows for details."
+WINE_ARGS="-SkipBuildPatchPrereq -OpenGL -no-cef-sandbox"
 
 function install_app() {
   # Install additional requirements via winetricks here
@@ -22,7 +19,7 @@ function install_app() {
     perl -p -e '$| = 1; s/^.* +([0-9]+%) +([0-9,.]+[GMKB]) +([0-9hms,.]+).*$/\1\n# Downloading... \2 (\3)/' | \
     yad --progress --title="${INSTALL_EXE}" --width=400 --center --no-buttons --auto-close --auto-kill --on-top --no-escape
     # Installs the wine application
-    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" "${TMPDIR}/${INSTALL_EXE}" /silent
+    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" "${TMPDIR}/${INSTALL_EXE}" "${WINE_ARGS}"
     # Removes the cached installer
     rm -v "${TMPDIR}/${INSTALL_EXE}"
   fi
@@ -38,9 +35,9 @@ function launch_app() {
     # Creating a virtual desktop the same size will eliminate bugs when
     # switching from fullscreen to windowed mode.
     NATIVE_RES=$(xrandr -q | grep primary | cut -d' ' -f4 | cut -d'+' -f1)
-    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" explorer /desktop="virtual","${NATIVE_RES}" "${WINE_EXE}" -SkipBuildPatchPrereq -OpenGL -no-dwrite -no-cef-sandbox "${@}"
+    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" explorer /desktop="virtual","${NATIVE_RES}" "${WINE_EXE}" "${WINE_ARGS}" $@
   else
-    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" "${WINE_EXE}" -SkipBuildPatchPrereq -OpenGL -no-dwrite -no-cef-sandbox "${@}"
+    env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" "${WINE_EXE}" "${WINE_ARGS}" $@
   fi
 }
 
@@ -197,21 +194,10 @@ if [ -f "${WINEPREFIX}/.update-timestamp" ]; then
   fi
 fi
 
-# Initialise wine
-if [ ! -f "${WINEPREFIX}/drive_c/windows/win.ini" ]; then
-  # Splash
-  yad --timeout=15 --timeout-indicator=bottom --text="${NOTICE}" --no-escape --width=460 --center --no-buttons --splash --on-top &
-  # Create the WINE environment
-  env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "${WINELOADER}" wineboot --init 2>&1 | \
-  yad --progress --title="Preparing Windows environment" --width=400 --center --no-buttons --auto-close --auto-kill --on-top --pulsate
-  # Opt out of winetricks metrics - we ninja this to avoid dialogs
-  if [ ! -f "${XDG_CACHE_HOME}/winetricks/track_usage" ]; then
-    mkdir -p "${XDG_CACHE_HOME}/winetricks"
-    echo 0 > "${XDG_CACHE_HOME}/winetricks/track_usage"
-  fi
-else
-  # Notification
-  notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "${TITLE}" "${NOTICE}"
+# Opt out of winetricks metrics - we ninja this to avoid dialogs
+if [ ! -f "${XDG_CACHE_HOME}/winetricks/track_usage" ]; then
+  mkdir -p "${XDG_CACHE_HOME}/winetricks"
+  echo 0 > "${XDG_CACHE_HOME}/winetricks/track_usage"
 fi
 
 # Launch wineboot/winecfg/winetricks if requested.
@@ -219,7 +205,11 @@ fi
 if [[ ${WINE_EXE} = *"winecfg"* ]] || [[ ${WINE_EXE} = *"wineboot"* ]] || [[ ${WINE_EXE} = *"winetricks"* ]]; then
   env WINEARCH="${WINEARCH}" WINEPREFIX="${WINEPREFIX}" "$@"
 elif [ -e "${WINE_EXE}" ]; then
+  # Notification
+  notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "${TITLE}" "${NOTICE}"
   launch_app
 else
+  # Notification
+  notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "${TITLE}" "${NOTICE}"
   install_app
 fi

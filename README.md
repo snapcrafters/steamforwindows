@@ -4,8 +4,11 @@
   Steam for Windows
 </h1>
 
-<p align="center"><b>This is the snap for Steam for Windows</b>. It works on Ubuntu, Fedora, Debian, and other major Linux
-distributions.</p>
+<p align="center"><b>This is the snap for Steam for Windows</b>. It works on 
+Ubuntu, Fedora, Debian, and other major Linux distributions.<b>This snap is 
+experimental, built with development releases of upstream WINE and may not 
+function as expected. If you encounter issues please report them is this 
+GitHUb project.</b></p>
 
 <p align="center">Published for <img src="http://anything.codes/slack-emoji-for-techies/emoji/tux.png" align="top" width="24" /> with :gift_heart: by Snapcrafters</p>
 

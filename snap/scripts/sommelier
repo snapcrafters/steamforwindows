@@ -29,8 +29,6 @@ function launch_app() {
   # If we don't change into the program directory some assets may not be found
   cd "${WINE_DIR}"
 
-  echo "-----Arguments passed to steam: $@"
-
   # Only use virtual desktop if it has been requested and we're running Xorg
   if [ "${XDG_SESSION_TYPE}" == "x11" ] && [ "${VIRTDESKTOP}" == "1" ]; then
     # Get the native resolution of the primary display.
@@ -209,7 +207,7 @@ if [[ ${WINE_EXE} = *"winecfg"* ]] || [[ ${WINE_EXE} = *"wineboot"* ]] || [[ ${W
 elif [ -e "${WINE_EXE}" ]; then
   # Notification
   notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "${TITLE}" "${NOTICE}"
-  launch_app
+  launch_app $@
 else
   # Notification
   notify-send --icon "${SNAP}/meta/gui/steamforwindows.png" --expire-time=15000 "${TITLE}" "${NOTICE}"
